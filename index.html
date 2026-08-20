@@ -63,7 +63,37 @@
   .lgroup h3 { font-size: 12px; font-weight: 600; margin: 0 0 8px; color: var(--text-primary); }
   .lrow { display: flex; align-items: center; gap: 8px; font-size: 12.5px;
           color: var(--text-secondary); margin-bottom: 5px; }
-  .lsw { width: 13px; height: 13px; border-radius: 3px; flex: none; }
+  .lsw { width: 13px; height: 13px; border-radius: 50%; flex: none; }
+
+  /* --- revised legend --- */
+  .legend2 { display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start; }
+  .legend2-col { flex: 1 1 340px; min-width: 300px; }
+  .legend2-col h3 { font-size: 13px; font-weight: 600; margin: 0 0 12px; color: var(--text-primary); }
+
+  table.sizeTable { border-collapse: collapse; width: 100%; font-size: 12.5px; margin-bottom: 16px; }
+  table.sizeTable th { background: var(--conf-high); color: #fff; font-weight: 600;
+                        text-align: left; padding: 7px 10px; font-size: 11.5px;
+                        text-transform: none; }
+  table.sizeTable th:first-child { width: 50px; }
+  table.sizeTable td { padding: 7px 10px; border-bottom: 1px solid var(--grid);
+                        color: var(--text-secondary); vertical-align: middle; }
+  table.sizeTable tbody tr:nth-child(odd) { background: var(--band); }
+  table.sizeTable td.szcell { width: 50px; padding-right: 22px; border-right: 1px solid var(--grid); }
+  table.sizeTable td.lvlcell { padding-left: 22px; }
+
+  .naRow { display: flex; align-items: center; gap: 8px; font-size: 12.5px;
+           color: var(--text-secondary); margin: 2px 0 18px; }
+
+  .costNotes h4 { font-size: 12px; font-weight: 600; margin: 0 0 6px; color: var(--text-primary); }
+  .costNotes p { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin: 0 0 8px; }
+  .costNotes em { font-style: italic; }
+
+  .confBox { border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; background: var(--page); }
+  .confBox h4 { font-size: 12px; font-weight: 600; margin: 0 0 10px; color: var(--text-primary); }
+
+  .toggleInfo { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .toggleInfo h3 { font-size: 13px; font-weight: 600; margin: 0 0 8px; color: var(--text-primary); }
+  .toggleInfo p { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin: 0 0 4px; }
 
   svg { display: block; max-width: 100%; height: auto; overflow: visible; }
   svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -101,53 +131,63 @@
 <h1>Wildfire mitigation milestones &mdash; 10&ndash;20 ft High Exposure pathway</h1>
 <div class="intro">
 <p class="lede"><strong>Organized to match the IBHS 10&ndash;20 ft High Exposure pathway:</strong> Ember Defense &rarr; Spread Defense &rarr; Structure Defense &rarr; Neighborhood Resilience. The milestone is the outcome; the pathway determines the task sequence.</p>
-<p class="lede">Circle size is how well a measure scores &mdash; for the two cost columns, how
-affordable it is. <strong>Circle color is how confident we are in that score</strong>, kept separate
+<p class="lede"><strong>Circle size</strong> is how well a measure performs for each of the four
+attributes: effectiveness at reducing fire risk, cost, effects on livability or quality of life,
+and maintenance needs. <strong>Circle color</strong> is how confident we are in that score, kept separate
 on purpose: a measure can look good on a dimension where our basis for saying so is thin.</p>
-<p class="lede">Following IPCC AR6 WGII Figure SPM.4(a). We assess to the <strong>confidence</strong>
-level only, not probability. Hover any cell for the reasoning and the dollar figures; the Comments
-column carries what the circles cannot.</p>
 </div>
 
 <div class="toolbar">
   <span class="sortlab">Sort rows</span>
-  <span class="sorthint">click a column heading &mdash; once to rank by it, twice for confidence, a third click restores pathway order</span>
   <button class="ctl" data-sort="group" type="button" aria-pressed="true">By IBHS milestone</button>
   <span class="tbsep"></span>
   <button class="ctl" id="tableBtn" type="button" aria-pressed="false">Show table view</button>
 </div>
 
 <section class="card">
-  <div class="legend">
-    <div class="lgroup">
-      <h3>Level of feasibility</h3>
-      <div class="lrow"><svg width="24" height="22"><circle cx="12" cy="11" r="9.5" fill="var(--conf-med)"/></svg> High</div>
-      <div class="lrow"><svg width="24" height="22"><circle cx="12" cy="11" r="5.8" fill="var(--conf-med)"/></svg> Medium</div>
-      <div class="lrow"><svg width="24" height="22"><circle cx="12" cy="11" r="2.6" fill="var(--conf-med)"/></svg> Low</div>
-      <div class="lrow"><svg width="22" height="22"><line x1="6" y1="15" x2="16" y2="7" stroke="var(--baseline)" stroke-width="2" stroke-linecap="round"/></svg> Insufficient evidence, not priced, or not applicable</div>
+  <div class="legend2">
+    <div class="legend2-col">
+      <h3>What do the circle sizes mean?</h3>
+      <table class="sizeTable">
+        <thead><tr><th></th><th>Effectiveness</th><th>Cost</th><th>Livability</th><th>Maintenance</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="szcell"><svg width="24" height="22"><circle cx="12" cy="11" r="9.5" fill="#000"/></svg></td>
+            <td class="lvlcell">High</td><td>&lt;$3,000</td><td>No impact</td><td>Low needs</td>
+          </tr>
+          <tr>
+            <td class="szcell"><svg width="24" height="22"><circle cx="12" cy="11" r="5.8" fill="#000"/></svg></td>
+            <td class="lvlcell">Medium</td><td>$3,000 to $8,000</td><td>Some impact</td><td>Medium needs</td>
+          </tr>
+          <tr>
+            <td class="szcell"><svg width="24" height="22"><circle cx="12" cy="11" r="2.6" fill="#000"/></svg></td>
+            <td class="lvlcell">Low</td><td>&gt;$8,000</td><td>High impact</td><td>High needs</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="naRow"><svg width="22" height="22"><line x1="6" y1="15" x2="16" y2="7" stroke="var(--baseline)" stroke-width="2" stroke-linecap="round"/></svg> Insufficient evidence, not priced, or not applicable</div>
+      <div class="costNotes">
+        <h4>Notes on cost</h4>
+        <p><em>minimal cost</em> &mdash; free, labor-only, or under $100 (neutral gray; confidence in the tooltip)</p>
+        <p>New build = materials-only increment over a traditional build (Headwaters / IBHS, Fall 2025);
+        Retrofit = fully loaded incl. labor (Headwaters 2024). Hover a cell or open the table view for
+        dollar figures. A whole-home retrofit runs $2,000 to $100,000+.</p>
+      </div>
     </div>
-    <div class="lgroup">
-      <h3>Confidence in the assessment</h3>
-      <div class="lrow"><span class="lsw" style="background:var(--conf-high)"></span> High &mdash; converging lines of evidence, no meaningful dissent</div>
-      <div class="lrow"><span class="lsw" style="background:var(--conf-med)"></span> Medium &mdash; evidence exists but is limited or indirect</div>
-      <div class="lrow"><span class="lsw" style="background:var(--conf-low)"></span> Low &mdash; asserted in guidance, little or no evidence published</div>
+    <div class="legend2-col">
+      <h3>What do the circle colors mean?</h3>
+      <div class="confBox">
+        <h4>Confidence in the assessment</h4>
+        <div class="lrow"><span class="lsw" style="background:var(--conf-high)"></span> High &mdash; converging lines of evidence, no meaningful dissent</div>
+        <div class="lrow"><span class="lsw" style="background:var(--conf-med)"></span> Medium &mdash; evidence exists but is limited or indirect</div>
+        <div class="lrow"><span class="lsw" style="background:var(--conf-low)"></span> Low &mdash; asserted in guidance, little or no evidence published</div>
+      </div>
     </div>
-    <div class="lgroup">
-      <h3>Cost columns</h3>
-      <div class="lrow"><svg width="24" height="22"><circle cx="12" cy="11" r="9.5" fill="var(--conf-med)"/></svg> &le;$3,000 &mdash; the median out-of-pocket spend</div>
-      <div class="lrow"><svg width="24" height="22"><circle cx="12" cy="11" r="5.8" fill="var(--conf-med)"/></svg> $3,000&ndash;8,000 &mdash; reachable with the median $5,000 loan</div>
-      <div class="lrow"><svg width="24" height="22"><circle cx="12" cy="11" r="2.6" fill="var(--conf-med)"/></svg> &gt;$8,000</div>
-      <div class="lrow"><em style="flex:none">minimal cost</em><span>&mdash; free, labor-only, or under $100 (neutral gray; confidence in the tooltip)</span></div>
-      <div class="lrow" style="max-width:38ch"><span>New build = materials-only increment over a
-      traditional build (Headwaters / IBHS, Fall 2025); Retrofit = fully loaded incl. labor
-      (Headwaters 2024). Hover a cell or open the table view for dollar figures. A whole-home
-      retrofit runs $2,000 to $100,000+.</span></div>
-    </div>
-    <div class="lgroup">
-      <h3>Reading the rows</h3>
-      <div class="lrow" style="max-width:26ch">Rows nest three levels: how fire reaches the house
-      (risk source), the specific vulnerability (risk factor), and the action (measure).</div>
-    </div>
+  </div>
+  <div class="toggleInfo">
+    <h3>How to toggle this chart</h3>
+    <p>Click a column heading &mdash; once to rank by it, twice for confidence, a third click restores pathway order.</p>
+    <p>Hover over any circle to get more information.</p>
   </div>
 </section>
 
@@ -849,8 +889,7 @@ function build() {
     'Headwaters Economics <em>Retrofitting a Home for Wildfire Resistance</em> (2024, fully loaded) and ' +
     'Headwaters / IBHS construction costs (Fall 2025, materials only); RFF WP 25-30 on insurer filings ' +
     '(Dec 2025); Hart Research / Megafire Action homeowner survey (Mar 2026, n=700 incl. 90272); ' +
-    'USGBC-CA &times; Arup <em>California Wildfire Rebuilding Guide</em> V1 (Apr 2025); Theodore Payne Foundation. ' +
-    'Full paper notes in <em>Literature_Quantified_Findings.md</em>.';
+    'USGBC-CA &times; Arup <em>California Wildfire Rebuilding Guide</em> V1 (Apr 2025); Theodore Payne Foundation.';
   wireTips();
 }
 
