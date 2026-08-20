@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palisades wildfire mitigation — feasibility assessment</title>
+<style>
+  :root, .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --band:           #f2f1ed;
+    --accent:         #2a78d6;
+    /* confidence ramp — validated ordinal */
+    --conf-low:       #86b6ef;
+    --conf-med:       #2a78d6;
+    --conf-high:      #104281;
+  }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+             overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+         background: var(--page); color: var(--text-primary); }
+  .viz-root { min-height: 100vh; padding: 32px 26px 60px; }
+  .wrap { max-width: 1240px; margin: 0 auto; }
+
+  .eyebrow { font-size: 11.5px; letter-spacing: .09em; text-transform: uppercase;
+             color: var(--text-muted); margin: 0 0 10px; }
+  h1 { font-size: 27px; font-weight: 600; letter-spacing: -.014em; margin: 0 0 10px; line-height: 1.2; }
+  .lede { font-size: 16px; line-height: 1.5; color: var(--text-secondary); margin: 0 0 6px; }
+  .intro { display: grid; gap: 8px 40px; }
+  @media (min-width: 900px) { .intro { grid-template-columns: 1fr 1fr; } }
+  .lede strong { color: var(--text-primary); font-weight: 600; }
+  .foot { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 22px 0 0; }
+  .foot + .foot { margin-top: 10px; }
+  /* the chart note is long-form; split it into columns on wide screens so it uses
+     the card's full width instead of stacking in a narrow left-hand block */
+  #chartNote { column-gap: 40px; }
+  @media (min-width: 900px)  { #chartNote { column-count: 2; } }
+  @media (min-width: 1180px) { #chartNote { column-count: 3; } }
+
+  .toolbar { display: flex; gap: 8px; margin: 22px 0 20px; flex-wrap: wrap; align-items: center; }
+  .sortlab { font-size: 12px; color: var(--text-muted); letter-spacing: .04em;
+             text-transform: uppercase; margin-right: 2px; }
+  .tbsep { width: 1px; height: 22px; background: var(--border); margin: 0 6px; order: 20; }
+  .sorthint { font-size: 12px; color: var(--text-muted); margin-left: 4px; order: 9; }
+  #tableBtn { order: 21; }
+  button.ctl { font: inherit; font-size: 13px; padding: 7px 13px; background: var(--surface-1);
+               color: var(--text-primary); border: 1px solid var(--border); border-radius: 7px; cursor: pointer; }
+  button.ctl:hover { background: var(--page); }
+  button.ctl[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
+          padding: 24px 26px 28px; margin-bottom: 20px; }
+
+  .legend { display: flex; gap: 34px; flex-wrap: wrap; margin: 0 0 6px; }
+  .lgroup h3 { font-size: 12px; font-weight: 600; margin: 0 0 8px; color: var(--text-primary); }
+  .lrow { display: flex; align-items: center; gap: 8px; font-size: 12.5px;
+          color: var(--text-secondary); margin-bottom: 5px; }
+  .lsw { width: 13px; height: 13px; border-radius: 3px; flex: none; }
+
+  svg { display: block; max-width: 100%; height: auto; overflow: visible; }
+  svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .t-pri { fill: var(--text-primary); }
+  .t-sec { fill: var(--text-secondary); }
+  .t-mut { fill: var(--text-muted); }
+  .t-acc { fill: var(--accent); }
+  .colhead { cursor: pointer; }
+  .colhead:focus { outline: none; }
+  .colhead:hover rect.chit, .colhead:focus-visible rect.chit { fill: var(--band); }
+  .cell { cursor: default; }
+  .cell:focus { outline: none; }
+  .cell:focus-visible rect.hit, .cell:hover rect.hit { fill: var(--band); }
+
+  table.tv { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  table.tv th, table.tv td { text-align: left; padding: 9px 12px 9px 0;
+                             border-bottom: 1px solid var(--grid); vertical-align: top; }
+  table.tv th { color: var(--text-secondary); font-weight: 600; font-size: 11px;
+                text-transform: uppercase; letter-spacing: .05em; }
+  table.tv td.n { white-space: nowrap; }
+  #tableView[hidden] { display: none; }
+
+  .tip { position: fixed; pointer-events: none; z-index: 50; background: var(--surface-1);
+         color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px;
+         padding: 10px 12px; font-size: 12.5px; line-height: 1.5; max-width: 330px;
+         box-shadow: 0 4px 16px rgba(0,0,0,.14); opacity: 0; transition: opacity .1s; }
+  .tip b { font-weight: 600; }
+  .tip .lv { color: var(--text-secondary); display: block; margin: 3px 0 5px; }
+</style>
+</head>
+<body>
+<div class="viz-root"><div class="wrap">
+
+<p class="eyebrow">Palisades Recovery Coalition &middot; Community Recovery Labs &middot; discussion draft</p>
+<h1>Wildfire mitigation milestones &mdash; 10&ndash;20 ft High Exposure pathway</h1>
+<div class="intro">
+<p class="lede"><strong>Organized to match the IBHS 10&ndash;20 ft High Exposure pathway:</strong> Ember Defense &rarr; Spread Defense &rarr; Structure Defense &rarr; Neighborhood Resilience. The milestone is the outcome; the pathway determines the task sequence.</p>
+<p class="lede">Circle size is how well a measure scores &mdash; for the two cost columns, how
+affordable it is. <strong>Circle color is how confident we are in that score</strong>, kept separate
+on purpose: a measure can look good on a dimension where our basis for saying so is thin.</p>
+<p class="lede">Following IPCC AR6 WGII Figure SPM.4(a). We assess to the <strong>confidence</strong>
+level only, not probability. Hover any cell for the reasoning and the dollar figures; the Comments
+column carries what the circles cannot.</p>
+</div>
+
+<div class="toolbar">
+  <span class="sortlab">Sort rows</span>
+  <span class="sorthint">click a column heading &mdash; once to rank by it, twice for confidence, a third click restores pathway order</span>
+  <button class="ctl" data-sort="group" type="button" aria-pressed="true">By IBHS milestone</button>
+  <span class="tbsep"></span>
+  <button class="ctl" id="tableBtn" type="button" aria-pressed="false">Show table view</button>
+</div>
+
+<section class="card">
+  <div class="legend">
+    <div class="lgroup">
+      <h3>Level of feasibility</h3>
+      <div class="lrow"><svg width="24" height="22"><circle cx="12" cy="11" r="9.5" fill="var(--conf-med)"/></svg> High</div>
+      <div class="lrow"><svg width="24" height="22"><circle cx="12" cy="11" r="5.8" fill="var(--conf-med)"/></svg> Medium</div>
+      <div class="lrow"><svg width="24" height="22"><circle cx="12" cy="11" r="2.6" fill="var(--conf-med)"/></svg> Low</div>
+      <div class="lrow"><svg width="22" height="22"><line x1="6" y1="15" x2="16" y2="7" stroke="var(--baseline)" stroke-width="2" stroke-linecap="round"/></svg> Insufficient evidence, not priced, or not applicable</div>
+    </div>
+    <div class="lgroup">
+      <h3>Confidence in the assessment</h3>
+      <div class="lrow"><span class="lsw" style="background:var(--conf-high)"></span> High &mdash; converging lines of evidence, no meaningful dissent</div>
+      <div class="lrow"><span class="lsw" style="background:var(--conf-med)"></span> Medium &mdash; evidence exists but is limited or indirect</div>
+      <div class="lrow"><span class="lsw" style="background:var(--conf-low)"></span> Low &mdash; asserted in guidance, little or no evidence published</div>
+    </div>
+    <div class="lgroup">
+      <h3>Cost columns</h3>
+      <div class="lrow"><svg width="24" height="22"><circle cx="12" cy="11" r="9.5" fill="var(--conf-med)"/></svg> &le;$3,000 &mdash; the median out-of-pocket spend</div>
+      <div class="lrow"><svg width="24" height="22"><circle cx="12" cy="11" r="5.8" fill="var(--conf-med)"/></svg> $3,000&ndash;8,000 &mdash; reachable with the median $5,000 loan</div>
+      <div class="lrow"><svg width="24" height="22"><circle cx="12" cy="11" r="2.6" fill="var(--conf-med)"/></svg> &gt;$8,000</div>
+      <div class="lrow"><em style="flex:none">minimal cost</em><span>&mdash; free, labor-only, or under $100 (neutral gray; confidence in the tooltip)</span></div>
+      <div class="lrow" style="max-width:38ch"><span>New build = materials-only increment over a
+      traditional build (Headwaters / IBHS, Fall 2025); Retrofit = fully loaded incl. labor
+      (Headwaters 2024). Hover a cell or open the table view for dollar figures. A whole-home
+      retrofit runs $2,000 to $100,000+.</span></div>
+    </div>
+    <div class="lgroup">
+      <h3>Reading the rows</h3>
+      <div class="lrow" style="max-width:26ch">Rows nest three levels: how fire reaches the house
+      (risk source), the specific vulnerability (risk factor), and the action (measure).</div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <p id="chartDesc" class="sr-only">Matrix of 29 wildfire mitigation measures grouped under four IBHS milestones for the 10–20 ft High Exposure pathway, assessed on five dimensions — effectiveness, new-build cost, retrofit cost, livability, and maintenance — with a short comment per measure. Circle size shows the level (for cost, the affordability tier) and circle color shows confidence in that assessment.</p>
+  <svg id="chart" viewBox="0 0 1180 700" role="img"
+       aria-label="Wildfire mitigation feasibility matrix" aria-describedby="chartDesc">
+  </svg>
+  <p class="foot" id="chartNote"></p>
+</section>
+
+<section class="card" id="tableView" hidden>
+  <h1 style="font-size:19px;margin-bottom:6px">Table view</h1>
+  <p class="lede" style="font-size:14px;margin-bottom:16px">Every cell as text: level, confidence,
+  and the reasoning. Nothing here depends on color.</p>
+  <table class="tv"><thead><tr>
+    <th style="width:7%">Risk source</th><th style="width:8%">Risk factor</th>
+    <th style="width:10%">Measure</th><th style="width:8%">Dimension</th>
+    <th style="width:10%">Level</th><th style="width:5%">Conf.</th>
+    <th style="width:8%">Sources</th><th>Basis</th><th style="width:14%">Comment</th>
+  </tr></thead><tbody id="tvBody"></tbody></table>
+</section>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+</div></div>
+
+<script>
+// ---------------------------------------------------------------------------
+// DIMENSIONS. All read the same direction: a bigger circle is better.
+// ---------------------------------------------------------------------------
+const DIMS = [
+  {key:'eff',   label:'Effectiveness', sub:'reduces ignition'},
+  {key:'costN', label:'New build',     sub:'added at build',  group:'Cost', money:true},
+  {key:'costR', label:'Retrofit',      sub:'incl. labor',     group:'Cost', money:true},
+  {key:'live',  label:'Livability',    sub:'daily life kept'},
+  {key:'maint', label:'Maintenance',   sub:'set-and-forget'},
+];
+
+// L = level: 3 high / 2 medium / 1 low / 0 not applicable, not priced, or no evidence (drawn as a dash)
+// C = confidence: 3 high / 2 medium / 1 low
+// Dot cells: [L, C, basis, badge?]. Money cells: [usd | 'min' | null, C, basis, dollarLabel?] —
+// 'min' = under $100, free, or labor-only (renders the word "minimal"); null = unpriced or public.
+// Retrofit $ are fully loaded incl. labor (Headwaters 2024); new-build $ are materials-only
+// increments over a traditional build (Headwaters / IBHS, Fall 2025).
+const ROWS = [
+{src:'1 Ember Defense', factor:'Roof covering', measure:'Class A roof assembly',
+ note:'covering and underlayment',
+ comment:'IBHS goes further than code and bans wood roofing outright; its position is that Class A is necessary but not sufficient.',
+ cells:{
+  eff:[3,3,'Wood shake as the largest single structural risk factor is confirmed across decades of post-fire investigation. In the LA fires about 80% of structures IBHS assessed in detail already had Class A coverings — and even Class A can be overwhelmed in a conflagration, which is why IBHS treats it as necessary rather than sufficient. Tested to ASTM E108 or UL 790; the membrane alone is not Class A, only the tested assembly.'],
+  costN:[990,2,'The wildfire increment is small: the roof assembly runs $26,311 in materials against $25,321 for a traditional build on the 1,750 sq ft model home. The roof is expensive in any build; the wildfire-rated upgrade adds relatively little. [Headwaters / IBHS, Fall 2025]','+$990'],
+  costR:[12000,3,'Class A asphalt runs $496 per square fully loaded, plus about $133 per square for fire-resistant underlayment — a whole-roof replacement lands well past $8,000. Tile is unpriced in the available data, a real gap given the local roofscape. [Headwaters 2024]','$496/sq'],
+  live:[3,3,'No change to daily life once installed.'],
+  maint:[3,2,'A 25-to-30-year assembly. The wildfire part needs no more upkeep than any roof — keeping it clear of debris is the only recurring task.']
+}}
+,
+{src:'1 Ember Defense', factor:'Roof covering', measure:'Simple roof geometry',
+ note:'limit eaves and valleys',
+ comment:'Applies only to new construction and rebuilds — in the Palisades, most properties.',
+ cells:{
+  eff:[2,1,'Complex roofs collect debris in valleys and at eaves, where embers land. This comes from the Arup rebuild guide; no source quantifies the effect.'],
+  costN:['min',2,'A design choice, not a purchase — the Arup guide notes simple roofs are "generally less expensive to build."'],
+  costR:[null,3,'Not retrofittable; roof geometry is fixed at construction.'],
+  live:[3,2,'A design constraint at rebuild, not a daily cost.'],
+  maint:[3,2,'Nothing to maintain — fewer valleys also mean less debris to clear.']
+}}
+,
+{src:'1 Ember Defense', factor:'Vent openings', measure:'Ember-resistant vents',
+ note:'1/16–1/8&#8243; mesh, ASTM E2886',
+ comment:'Cheapest hardening component, least adopted: only 10.3% (Palisades) / 6.4% (Eaton) of assessed structures had compliant mesh.',
+ cells:{
+  eff:[3,3,'Ember intrusion through vents is a dominant loss pathway, demonstrated in IBHS ember-storm testing. Syphard &amp; Keeley 2019 measured screened vents at a relative risk of 0.94 — real, but tied with windows as the weakest of the four structural features they tested. ASTM E2886 sets a measurable pass/fail threshold: no flaming ignition of the cotton indicator under a standardized ember and flame exposure.','RR 0.94'],
+  costN:['min',2,'Included in the rated assemblies of a wildfire-resistant new build — a rounding error on its own.'],
+  costR:[421,3,'$53 for a circular vent in an open eave, $106 for a soffit vent, $421 for a gable vent — fully loaded including demolition and labor. A whole house typically lands in the hundreds. [Headwaters 2024]','$53–421 ea'],
+  live:[3,3,'Invisible in daily life.'],
+  maint:[3,2,'Install once; occasional check that the mesh stays clear of paint and debris.']
+}}
+,
+{src:'1 Ember Defense', factor:'Vent openings', measure:'Remove turbine vents',
+ note:'whirlybirds prohibited',
+ comment:'A bare IBHS requirement — no published effectiveness evidence either way.',
+ cells:{
+  eff:[2,1,'IBHS prohibits turbine vents outright — "turbine vents (e.g., whirlybird vents) are not allowed" — with no stated reason. Direction is not in doubt; magnitude is unevidenced.'],
+  costN:['min',2,'Simply not installed at build.'],
+  costR:[300,1,'A simple swap to a compliant vent; low hundreds installed. No Headwaters line item.','~low $100s'],
+  live:[3,3,'No change to daily life.'],
+  maint:[3,3,'One-time swap.']
+}}
+,
+{src:'1 Ember Defense', factor:'Roof debris', measure:'Non-combustible gutters and covers',
+ note:'',
+ comment:'Covers reduce cleaning frequency, but the benefit depends on the gutter staying clear.',
+ cells:{
+  eff:[2,1,'Needles and leaves in gutters are an established ignition point, and vinyl gutters can themselves ignite. Direction is not in doubt; magnitude is unevidenced.'],
+  costN:['min',2,'Metal gutters are the default in new construction.'],
+  costR:[1500,1,'Low — within the median budget; no Headwaters line item. The Arup guide notes aluminium lasts "twice as long or more" than vinyl.','~$1–2k'],
+  live:[3,3,'No change to daily life.'],
+  maint:[2,2,'Covers cut cleaning frequency but do not eliminate it; some ongoing cleaning remains.']
+}}
+,
+{src:'1 Ember Defense', factor:'Zone 0 objects', measure:'Remove combustible objects 0–5 ft',
+ note:'furniture, firewood, bins, planters',
+ comment:'The cheapest well-evidenced measure in the chart; the cost is ongoing effort rather than money.',
+ cells:{
+  eff:[3,3,'The best-supported part of the Zone 0 rule. IBHS ember-storm testing shows embers accumulating at the wall base. Knapp et al. 2021 forensics on 310 damaged homes: 63% showed radiant heat damage and 44% flame impingement, attributed largely to ember ignition of "woody mulch, fences, and receptive vegetation" within the first 1.5 m. IBHS’s LA investigation put damage likelihood at 87–100% when Zone 0 fuel coverage exceeded 25%.'],
+  costN:['min',3,'Nothing to buy.'],
+  costR:['min',3,'Costs labor and discipline, not money.'],
+  live:[2,2,'Moves furniture, planters, bins and firewood out of the most-used strip of the yard — a real convenience loss, short of losing plantings.'],
+  maint:[1,3,'Not a one-time task; requires ongoing attention as items accumulate again.']
+}}
+,
+{src:'1 Ember Defense', factor:'Zone 0 objects', measure:'Remove mulch and turf to bare soil',
+ note:'',
+ comment:'Combustible mulch was in the 2022 workgroup’s not-recommended category and was not polled for an allowance.',
+ cells:{
+  eff:[3,3,'NIST work on fences and mulch finds non-vegetative combustibles within Zone 0 provide pathways for home ignition; IBHS requires removal to bare mineral soil. Note it is zone-wide removal — there is no mulch setback distance.'],
+  costN:[2636,2,'Zone 0 hardscape adds $2,636 in materials over a traditional build ($3,742 vs $1,106). [Headwaters / IBHS, Fall 2025]','+$2,636'],
+  costR:[2782,3,'Replacing mulch with rock across a 5 ft band on a 1,000 sq ft footprint runs about $2,782 fully loaded including removal and dumping; a weed barrier adds about $100. Scales with footprint. [Headwaters 2024]','~$2,780'],
+  live:[2,2,'Gravel where garden beds were — an aesthetic and gardening loss in the most visible strip of the property.'],
+  maint:[2,2,'Rock beds still need weeding and occasional top-up, but far less than mulch replacement.']
+}}
+,
+{src:'1 Ember Defense', factor:'Zone 0 objects', measure:'Move vehicles and boats out of 0–5 ft',
+ note:'',
+ comment:'Untested because self-evident: stored fuel in direct contact with the structure is an unambiguous hazard.',
+ cells:{
+  eff:[2,2,'Untested because self-evident: a boat, camper or RV with a fuel tank against the siding is an ignition source no experiment is needed to establish. IBHS bans storage within 5 ft.'],
+  costN:['min',3,'No purchase required; only alternative parking.'],
+  costR:['min',3,'No cost — only somewhere else to park.'],
+  live:[2,2,'Trivial on a large lot; a daily nuisance on a small lot with one driveway.'],
+  maint:[1,3,'A standing habit, not an install.']
+}}
+,
+{src:'1 Ember Defense', factor:'Zone 0 planting', measure:'Restrict living plants 0–5 ft',
+ note:'the contested one',
+ comment:'Experiments show well-watered plants ignite; the draft rule permits more than the experiments support — a rulemaking compromise.',
+ cells:{
+  eff:[3,2,'UC Berkeley burn-lab experiments from Gollner’s group, presented in the BOF Zone 0 process, showed well-watered green shrubs still igniting under ember and flame exposure — "just because a plant is very moist doesn’t mean it’s non-flammable." IBHS’s own 17-test series: no ignitions in 3 tests without shrubs, 3 ignitions in 11 tests with shrubs windward in Zone 0. What remains unsettled is the threshold: IBHS field data put the likelihood of damage or destruction at 87–100% once Zone 0 fuel coverage exceeds 25%.','87–100% above 25%'],
+  costN:['min',3,'Nothing to buy — a planting-plan choice at rebuild.'],
+  costR:['min',3,'Removal itself is labor-only; the loss is the existing landscaping.'],
+  live:[1,3,'The clearest trade-off in the chart: fire arrives once in a decade or two, while the shade and garden this removes provided daily benefit — extreme heat recurs every summer. The draft rule’s allowances (low non-woody plants, small potted plants) soften but do not remove the loss.'],
+  maint:[1,2,'A standing landscape regime, not a one-time clearing — regrowth, replanting temptation, and inspection all recur.']
+}}
+,
+{src:'1 Ember Defense', factor:'Attached combustibles', measure:'Non-combustible deck and fence',
+ note:'',
+ comment:'The most expensive single retrofit here — well outside the $3,000/$8,000 homeowner budget without assistance.',
+ cells:{
+  eff:[3,3,'Wood fences and decks as conduits recur across post-fire investigations, and NIST finds non-vegetative combustibles in contact with a building provide ignition pathways. Syphard &amp; Keeley 2019 measured composite decking at a relative risk of 0.85 statewide. IBHS’s LA investigation: more than 90% of surveyed structures had a fence, and fences were a direct fire pathway in nearly 70% of Palisades and 57% of Eaton cases.','70% a fire path'],
+  costN:[760,2,'Metal fencing in the new-build Zone 0 package runs about $760 in materials; deck material is a design choice at build. [Headwaters / IBHS, Fall 2025 revision]','~$760 fence'],
+  costR:[9670,3,'Non-combustible fencing runs $9,670 fully loaded — fiber-cement panels on steel posts, 8 ft high, both sides of the house for the first 5–10 ft, gates excluded. Cheaper materials such as metal bring it down. [Headwaters 2024]','$9,670'],
+  live:[3,2,'Function replaced like-for-like — privacy and enclosure survive the material swap.'],
+  maint:[3,3,'Durable materials; one-time.']
+}}
+,
+{src:'1 Ember Defense', factor:'Attached combustibles', measure:'Clear and enclose under decks',
+ note:'to bare mineral soil',
+ comment:'IBHS states the rationale explicitly: reduce debris accumulation and limit ember intrusion.',
+ cells:{
+  eff:[2,2,'Removes the fuel bed where embers collect under an elevated deck. IBHS requires clearing to bare mineral soil, nothing stored underneath, and 1/8-inch mesh on decks 4 ft or less above ground — stated purpose "to reduce debris accumulation and limit ember intrusion."'],
+  costN:['min',2,'A detailing choice at build.'],
+  costR:[500,2,'Clearing is labor; the mesh enclosure is inexpensive relative to deck replacement.','~$100s'],
+  live:[2,2,'Loses the storage space under the deck.'],
+  maint:[2,2,'Mesh is one-time; keeping the space empty is a habit.']
+}}
+,
+{src:'1 Ember Defense', factor:'Near-home vegetation', measure:'Prune trees and space shrubs',
+ note:'6 ft limbs, 2× height spacing',
+ comment:'Mature trees drew 4-of-7 support in the 2022 workgroup — the least contested vegetation allowance.',
+ cells:{
+  eff:[2,1,'IBHS specifies pruning to 6 vertical feet or one-third of tree height and shrub spacing of 2× the tallest plant. But the evidence for defensible-space distance is weak and regionally inconsistent: Syphard &amp; Keeley 2019 found no effect in Southern California; Syphard et al. 2014 put the useful range at 5–20 m with nothing gained beyond 30 m; Gibbons et al. 2012 found a 43% reduction in Australia but warns against porting it.'],
+  costN:['min',2,'A planting-plan choice.'],
+  costR:[500,2,'Largely maintenance and plant selection; a pruning visit runs low hundreds.','~$100s/yr'],
+  live:[2,2,'Keeps the landscape but disciplines it — pruned canopies and spaced shrubs rather than removal.'],
+  maint:[1,3,'Seasonal and ongoing; the work recurs every year.']
+}}
+,
+{src:'1 Ember Defense', factor:'Stored fuels', measure:'Move woodpiles and propane 30 ft out',
+ note:'',
+ comment:'Untested because self-evident — the hazard of stacked firewood and pressurized fuel near a structure is not in scientific doubt.',
+ cells:{
+  eff:[2,2,'Untested because self-evident — firewood is stacked fuel and a propane tank is a pressurized accelerant. IBHS requires woodpiles at least 30 ft from the building unless enclosed, bars fire-retardant tarps, and sets tiered clearance around propane tanks.'],
+  costN:['min',3,'A siting choice.'],
+  costR:['min',3,'Relocation only — no purchase required.'],
+  live:[2,2,'A convenience loss — the woodpile lives far from the stove. Trivial on a big lot, real on a small one.'],
+  maint:[1,3,'Requires ongoing attention; stored items tend to return toward the house.']
+}}
+,
+{src:'2 Spread Defense', factor:'Wall base', measure:'6-inch non-combustible wall base',
+ note:'',
+ comment:'Also an IRC moisture requirement since 2000, so the wildfire benefit builds on standard practice.',
+ cells:{
+  eff:[2,2,'Targets the mechanism IBHS has actually tested — embers accumulating at the base of walls. IBHS ember-exposure tests found direct wall ignition only when there was no vertical clearance, and NIST corner-assembly tests with mulch found ignitions at 4 inches of clearance that 8 inches mostly prevented (Manzello et al. 2017; IBHS Home Mitigations That Matter, 2023).'],
+  costN:['min',2,'A detailing choice at build.'],
+  costR:[1000,1,'A narrow band of flashing, veneer or stucco — among the cheaper structural measures, though no separate figure is published.','~$1k'],
+  live:[3,3,'No change to daily life.'],
+  maint:[3,3,'One-time install; nothing recurring.']
+}}
+,
+{src:'2 Spread Defense', factor:'Detached structures', measure:'Separate and harden sheds and ADUs',
+ note:'10 ft base, 30 ft Plus',
+ comment:'Spacing numbers come from shed burn tests up to 64 sq ft — bigger outbuildings are untested.',
+ cells:{
+  eff:[2,2,'NIST shed testing supports 10–15 ft separation depending on size (sheds to 64 sq ft tested), and IBHS requires accessory structures over 15 sq ft to sit 10 ft away at Base, 30 ft at Plus, with non-overlapping Zone 0s.'],
+  costN:['min',2,'A siting choice on the plan.'],
+  costR:[null,1,'No published figure for relocating or hardening accessory structures.'],
+  live:[2,2,'A yard-layout constraint — moving a shed 30 ft out is often geometrically impossible on a suburban lot.'],
+  maint:[3,2,'One-time siting.']
+}}
+,
+{src:'2 Spread Defense', factor:'Defensible space 30–100 ft', measure:'Maintain the outer defensible-space band',
+ note:'weakest evidence of any required measure',
+ comment:'The 100 ft band routinely crosses onto neighbors and public land — partly not the owner’s to do.',
+ cells:{
+  eff:[1,2,'Required by California law and among the least supported by evidence. Syphard &amp; Keeley 2019 found defensible-space distance had no measurable effect in Southern California (relative risk 1.0, p=0.89, n=41,717). Syphard, Brennan &amp; Keeley 2014 found nothing gained beyond about 30 m in southern shrubland. Knapp et al. 2021 is the counterweight: canopy at 30–100 m was highly significant even though canopy at 0–30 m was not.'],
+  costN:['min',2,'A landscape-plan choice at build.'],
+  costR:[500,2,'Recurring maintenance rather than a one-time purchase — it competes with the household budget every year.','~$100s/yr'],
+  live:[2,2,'A managed landscape rather than a wild one, across most of the parcel.'],
+  maint:[1,3,'Annual at minimum, and inspection-driven.']
+}}
+,
+{src:'3 Structure Defense', factor:'Glazing', measure:'Dual-pane tempered glass',
+ note:'',
+ comment:'The energy code already delivers dual-pane in any rebuild — the wildfire question is tempering and frames (vinyl needs metal reinforcement).',
+ cells:{
+  eff:[3,3,'Single-pane failure under radiant heat leading to interior ignition is confirmed in laboratory testing and post-fire investigation. Syphard &amp; Keeley 2019 measured multi-pane windows at a relative risk of 0.94 statewide (0.74 in Southern California). Mockrin et al. 2023 names multi-paned windows and enclosed eaves as the building materials most associated with survival in the Woolsey Fire.','RR 0.94'],
+  costN:['min',3,'Near zero in a new build — the energy code already forces dual-pane; tempering is the marginal step (windows and doors show no Base-level increment in the Fall 2025 comparison).'],
+  costR:[10000,3,'$755 per dual-pane tempered window fully loaded, plus $400–500 for flashing and trim — realistically $1,155–1,255 installed, so a whole-house retrofit runs well past $8,000. [Headwaters 2024]','$755+/window'],
+  live:[3,3,'None — arguably better windows.'],
+  maint:[3,3,'One-time install; nothing recurring.']
+}}
+,
+{src:'3 Structure Defense', factor:'Wall cladding', measure:'Non-combustible siding',
+ note:'fiber cement, stucco, metal',
+ comment:'Mostly already done here — stucco dominates the local stock, so the marginal population is small.',
+ cells:{
+  eff:[2,2,'IBHS testing found ignition potential significantly lower once flames are more than 5 ft from the wall — the wall matters less than roof and vents in the ember pathway, and matters most when a neighboring structure is the heat source.'],
+  costN:[2130,2,'Exterior walls run $11,461 in materials on a traditional build to $13,591 at Plus — a $2,130 increment. Stucco, the regional default, is already noncombustible. [Headwaters / IBHS, Fall 2025]','+$2,130'],
+  costR:[10000,2,'Fiber cement at $6.67 per sq ft fully loaded makes a whole-house reclad run well past $8,000 — but 76–89% of surveyed LA structures already had noncombustible siding. [Headwaters 2024; IBHS Dec 2025]','$6.67/sq ft'],
+  live:[3,3,'No change to daily life.'],
+  maint:[3,3,'One-time; stucco and fiber cement are low-upkeep claddings.']
+}}
+,
+{src:'4 Neighborhood Resilience', factor:'Skylights', measure:'Harden skylights',
+ note:'tempered, mesh if operable',
+ comment:'Unpriced in every source — a small but real data gap.',
+ cells:{
+  eff:[2,1,'IBHS Plus requires an outer tempered and inner laminated pane, plus 1/8-inch mesh on operable units. Stated as a bare requirement; magnitude is unevidenced.'],
+  costN:[null,1,'No published figure.'],
+  costR:[null,1,'No published figure; fewer units than windows, so a smaller job.'],
+  live:[3,3,'No change to daily life.'],
+  maint:[3,2,'One-time replacement; mesh needs occasional clearing.']
+}}
+,
+{src:'4 Neighborhood Resilience', factor:'Eaves and soffits', measure:'Enclose eaves with soffits',
+ note:'strongest structural predictor',
+ comment:'IBHS guidance calls the field evidence “anecdotal,” but two independent datasets rank eaves as the top structural predictor.',
+ cells:{
+  eff:[3,3,'Among the best-evidenced measures here. Syphard &amp; Keeley 2019, 41,717 structures: enclosed eaves carry a relative risk of 0.79 statewide and "consistently explained more than any other structural parameters." Esparza et al. 2025, a preprint on the Eaton Fire, found eaves the dominant predictor — 0.666 of total model gain. Mockrin et al. 2023 on the Woolsey Fire co-lists eaves with windows; weaker, non-independent corroboration (Syphard is a co-author).','RR 0.79'],
+  costN:[3353,2,'Eaves run $1,900 in materials on a traditional build, $3,681 at IBHS Base and $5,253 at Plus — an increment of $1,781 to $3,353, the largest proportional jump among the building assemblies. [Headwaters / IBHS, Fall 2025]','+$1.8–3.4k'],
+  costR:[null,1,'No retrofit line item published; a real carpentry job.'],
+  live:[3,3,'No change to daily life.'],
+  maint:[3,3,'One-time install; nothing recurring.']
+}}
+,
+{src:'4 Neighborhood Resilience', factor:'Projections', measure:'Protect underfloor and projections',
+ note:'bay windows, balconies, piers',
+ comment:'Bare requirement with anecdotal field evidence — direction plausible, magnitude unknown.',
+ cells:{
+  eff:[2,1,'Enclosing or covering the exposed underside of bay windows, balconies and piers. IBHS mandates it at Plus while conceding the field evidence is anecdotal; magnitude is unevidenced.'],
+  costN:[null,1,'No published figure.'],
+  costR:[null,1,'No published figure; enclosing to the ground is substantial on a house on piers.'],
+  live:[3,2,'No change to daily life.'],
+  maint:[3,2,'One-time install; nothing recurring.']
+}}
+,
+{src:'4 Neighborhood Resilience', factor:'Doors', measure:'Upgrade exterior doors',
+ note:'non-combustible or 20-min rated',
+ comment:'The measure also covers garage-door gaps, capped at 1/8 in.',
+ cells:{
+  eff:[2,1,'IBHS Plus requires non-combustible, solid-core wood at least 1¾ inches, a 20-minute rating, or a non-combustible storm door outermost. IBHS itself describes door evidence as mostly anecdotal; magnitude is unevidenced.'],
+  costN:[3810,2,'Windows and doors together run $8,431 in materials on a traditional build to $12,241 at Plus — a $3,810 increment, doors not broken out. [Headwaters / IBHS, Fall 2025]','+$3,810 w/ windows'],
+  costR:[2000,1,'A component swap; solid-core exterior doors run low thousands installed. No Headwaters line item.','~$1–3k'],
+  live:[3,3,'No change to daily life.'],
+  maint:[3,3,'One-time install; nothing recurring.']
+}}
+,
+{src:'4 Neighborhood Resilience', factor:'Structure separation', measure:'30 ft spacing, or 1-hour wall',
+ note:'binding constraint in the Palisades',
+ comment:'A property of the pair of houses — one pre-code neighbor within 10 m adds ~2 pp to your own loss risk (Baylis). Not purchasable alone.',
+ cells:{
+  eff:[3,3,'The strongest-evidenced measure in the chart. Structure Separation Distance was the most important predictor in 4 of the 5 fires analyzed individually by Zamanialaei et al. 2025 (flame length led in Tubbs); analysis set ~45,947 unique data points. Knapp et al. 2021 found 18 m the threshold best predicting survival — 0.058 below it, 0.354 above. IBHS’s LA investigation: within 10 ft of a neighboring structure even four-feature homes had under a 50% chance of escaping damage, and each additional 10 ft added 7–13% up to 30 ft. Typical separation in the dense parts of the Palisades and Altadena was 8 to 20 ft.','0.058 → 0.354'],
+  costN:[null,2,'Lot geometry, not a purchase — and lot lines are set. The 1-hour rated wall fallback is priced nowhere in the available data.'],
+  costR:[null,2,'Not purchasable on a built-out lot; the rated-wall fallback is unpriced.'],
+  live:[0,0,'Not applicable — lot geometry rather than a daily-life choice.'],
+  maint:[3,1,'No recurring upkeep once achieved.']
+}}
+,
+{src:'4 Neighborhood Resilience', factor:'Fencing', measure:'Eliminate parallel combustible fences',
+ note:'needs neighbor agreement',
+ comment:'An owner cannot comply alone — the adjoining fence is the neighbor’s. The clearest convening case here (2022 workgroup: 3 of 7).',
+ cells:{
+  eff:[2,1,'Two combustible fences closer than 5 ft form a flame channel. IBHS prohibits the arrangement at Plus, permitting it only if one fence is non-combustible. Stated as a bare requirement; magnitude is unevidenced.'],
+  costN:['min',2,'A siting choice at build.'],
+  costR:[null,1,'Depends entirely on which fence is replaced and who pays — no publishable single figure.'],
+  live:[3,2,'No daily-life impact; the difficulty is the neighbor negotiation rather than the fence itself.'],
+  maint:[3,3,'One-time once resolved.']
+}}
+,
+{src:'4 Neighborhood Resilience', factor:'Neighborhood canopy', measure:'Retain and manage mature tree canopy',
+ note:'evidence points both ways here',
+ comment:'The draft rule lets existing trees remain (no new trees in Zone 0); the 2022 workgroup backed mature trees 4 of 7.',
+ cells:{
+  eff:[2,1,'Genuinely unsettled, and the Palisades evidence is the reason. Norlen et al. 2026 found tree canopy associated with less destruction in the Palisades (not significant, p=0.113) while harmful in Eaton (p&lt;0.001), and concluded urban morphology matters more than vegetation cover. Knapp found the 30–100 m band significant but 0–30 m not.'],
+  costN:['min',2,'Retention costs nothing at design time.'],
+  costR:[300,2,'Retention is free; pruning and maintenance are modest recurring costs.','pruning only'],
+  live:[3,3,'Preserves shade, cooling and street character; the opposite trade-off from Zone 0 plant removal.'],
+  maint:[2,2,'Pruning and litter management recur seasonally.']
+}}
+,
+{src:'4 Neighborhood Resilience', factor:'Shrubland fuel load', measure:'Manage shrubland fuel beyond 100 ft',
+ note:'the dominant fuel type here',
+ comment:'Entirely collective; belongs under Pillar Two rather than on a homeowner checklist.',
+ cells:{
+  eff:[2,2,'The dominant fuel here is shrubland rather than forest — both the Palisades (23,448 acres, CAL FIRE) and Eaton were wind-driven shrub fires. But the link from landscape-scale fuel treatment to individual structure survival is far weaker than the link from near-home conditions — no study in our set quantifies it.'],
+  costN:[null,3,'Public expenditure — Santa Monica Mountains Conservancy, State Parks and MRCA hold much of the land.'],
+  costR:[null,3,'Public expenditure, not a household cost — the homeowner budget does not apply.'],
+  live:[0,0,'Not a homeowner action.'],
+  maint:[0,0,'Agency program cadence, not household upkeep.']
+}}
+,
+{src:'4 Neighborhood Resilience', factor:'Water for suppression', measure:'Secure water system capacity',
+ note:'',
+ comment:'Pillar Two infrastructure — a public capacity question, not a parcel measure.',
+ cells:{
+  eff:[2,1,'Named in the CRL agenda under Pillar Two infrastructure, and a live issue after January 2025. We hold no quantified study linking hydrant capacity or reservoir management to structure survival — a real gap, not an omission.'],
+  costN:[null,3,'LADWP capital expenditure, not a household cost.'],
+  costR:[null,3,'Utility expenditure — the homeowner budget does not apply.'],
+  live:[0,0,'Not a homeowner action.'],
+  maint:[0,0,'Utility asset management.']
+}}
+,
+{src:'4 Neighborhood Resilience', factor:'Evacuation capacity', measure:'Improve evacuation and access routes',
+ note:'',
+ comment:'A life-safety measure — evaluated on a different axis than everything else in this chart.',
+ cells:{
+  eff:[2,1,'Protects life rather than structures, which is why it does not appear in the structure-survival literature at all. The Palisades and Eaton fires together killed 31 people — 12 in the Palisades, 19 in Eaton (CAL FIRE incident data). Access width also affects whether crews can defend a street: 12 ft driveway width and 15 ft vertical clearance are standard fire-access requirements.'],
+  costN:[null,3,'Public expenditure.'],
+  costR:[null,3,'Public expenditure — no figure in our sources.'],
+  live:[0,0,'Not a homeowner action beyond driveway width and address visibility.'],
+  maint:[0,0,'Public roadway maintenance.']
+}}
+,
+{src:'4 Neighborhood Resilience', factor:'Utility ignition risk', measure:'Underground or harden utility lines',
+ note:'',
+ comment:'Ratepayer-scale economics — not comparable to the per-measure household figures elsewhere in the chart.',
+ cells:{
+  eff:[2,1,'Addresses ignition rather than structure vulnerability, so it sits outside every survival study in our set. No Palisades-specific cost-effectiveness analysis exists.'],
+  costN:[null,3,'Among the most expensive interventions available, borne by ratepayers rather than the household.'],
+  costR:[null,3,'Ratepayer expenditure — not a parcel-level cost.'],
+  live:[0,0,'Not a homeowner action.'],
+  maint:[0,0,'Utility asset management.']
+}}
+];
+
+const SOURCE_TAGS = [
+  ['Theodore Payne', 'Theodore Payne'], ['Megafire', 'Hart Research survey'],
+  ['Zesty', 'Zesty.ai'], ['Syphard', 'Syphard et al.'], ['IBHS', 'IBHS'],
+  ['Arup', 'Arup guide'], ['FEMA', 'FEMA'], ['NIST', 'NIST'],
+  ['Headwaters', 'Headwaters Economics'], ['Knapp', 'Knapp et al.'],
+  ['Norlen', 'Norlen et al.'], ['Zamanialaei', 'Zamanialaei et al.'],
+  ['Esparza', 'Esparza et al.'], ['Mockrin', 'Mockrin et al.'],
+  ['Gibbons', 'Gibbons et al.'], ['Baylis', 'Baylis and Boomhower'],
+  ['Gollner', 'UC Berkeley (Gollner lab)'], ['Manzello', 'Manzello et al.'],
+  ['Chapter 7A', 'CWUIC Pt 7'], ['ASTM', 'ASTM'], ['Title 24', 'Title 24'],
+  ['CAL FIRE', 'CAL FIRE'], ['CRC', 'CRC'], ['CBC', 'CBC']
+];
+function sourcesOf(text) {
+  const seen = [];
+  SOURCE_TAGS.forEach(([needle, tag]) => {
+    if (text.indexOf(needle) >= 0 && seen.indexOf(tag) < 0) {
+      // don't double-count CBC when we already matched CWUIC Pt 7
+      if (tag === 'CBC' && seen.indexOf('CWUIC Pt 7') >= 0) return;
+      seen.push(tag);
+    }
+  });
+  return seen.length ? seen.join(', ') : '\u2014';
+}
+
+// Per-column sort. Money columns sort by affordability tier ("minimal" above High);
+// dashes sort to the bottom rather than being scored — absent evidence is not
+// infeasibility, the exact confusion this chart exists to prevent.
+function colScore(r, key, mode) {
+  const d = DIMS.find(x => x.key === key);
+  const c = r.cells[key];
+  const lvl = cellLevel(d, c);
+  if (!lvl) return -1;                       // dashes sort to the bottom
+  if (mode === 'conf') return c[1];          // confidence in this cell
+  return lvl;
+}
+
+let SORT = 'group';
+
+// Affordability tiers, set against the Hart survey ceilings: $3,000 median out-of-pocket
+// spend and $8,000 total including borrowing. Retrofit $ are fully loaded incl. labor
+// (Headwaters 2024); new-build $ are materials-only increments over a traditional build
+// (Headwaters / IBHS, Fall 2025). Landscape and community rows are public expenditure,
+// not a household cost, so they carry an em dash rather than an invented number.
+function tier(v) {
+  if (v == null) return 0;                 // unpriced or public expenditure -> dash
+  if (v === 'min' || v < 100) return 4;    // free, labor-only, or under $100 -> "minimal"
+  if (v <= 3000) return 3;                 // inside the $3,000 median out-of-pocket
+  if (v <= 8000) return 2;                 // reachable with the median $5,000 loan
+  return 1;                                // beyond the $8,000 total-willingness ceiling
+}
+function cellLevel(d, c) { return d.money ? tier(c[0]) : c[0]; }
+function fmtUSD(v) { return (v == null || v === 'min') ? '' : '$' + Math.round(v).toLocaleString('en-US'); }
+
+const CONF = {3:'var(--conf-high)', 2:'var(--conf-med)', 1:'var(--conf-low)'};
+const CONF_LABEL = {3:'High', 2:'Medium', 1:'Low', 0:'—'};
+const LEVEL_LABEL = {3:'High', 2:'Medium', 1:'Low', 0:'Insufficient evidence'};
+const TIER_LABEL = {4:'Minimal cost — free, labor-only, or under $100',
+  3:'High affordability (≤$3,000)', 2:'Medium ($3,000–8,000)',
+  1:'Low (>$8,000)', 0:'Not priced, or public expenditure'};
+const R = {3:9.5, 2:5.8, 1:2.6};
+
+// ---------------------------------------------------------------------------
+// Layout
+// ---------------------------------------------------------------------------
+const L = {
+  srcX: 8, factorX: 108, measureX: 226,
+  colStart: 540, colGap: 80,      // dot centers: eff 540, costN 620, costR 700, live 780, maint 860
+  commentX: 916, commentW: 256,   // comments text column, inside the 1172 baseline
+  headY: 58, rowH: 48, top: 96
+};
+
+function svgEl(tag, attrs, text) {
+  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function orderedRows() {
+  if (SORT === 'group') return ROWS.slice();
+  if (SORT.indexOf('col:') === 0) {
+    const parts = SORT.split(':');           // col:<key>:<mode>
+    const key = parts[1], mode = parts[2] || 'level';
+    return ROWS.slice().sort((a, b) => {
+      const d = colScore(b, key, mode) - colScore(a, key, mode);
+      if (d) return d;
+      // tie-break on the other measure, so the two modes give different orders
+      const other = mode === 'conf' ? 'level' : 'conf';
+      return colScore(b, key, other) - colScore(a, key, other);
+    });
+  }
+  return ROWS.slice();
+}
+
+function build() {
+  const svg = document.getElementById('chart');
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  const rows = orderedRows();
+  const grouped = SORT === 'group';
+  const nRows = rows.length;
+  const plotH = L.top + nRows * L.rowH;
+  svg.setAttribute('viewBox', `0 0 1180 ${plotH + 26}`);
+
+  // ---- column headers
+  DIMS.forEach((d, i) => {
+    const x = L.colStart + i * L.colGap;
+    const activeLvl = SORT === 'col:' + d.key + ':level';
+    const activeConf = SORT === 'col:' + d.key + ':conf';
+    const active = activeLvl || activeConf;
+    const g = svgEl('g', {class:'colhead', tabindex:'0', role:'button'});
+    g.setAttribute('aria-label', 'Sort by ' + d.label);
+    g.appendChild(svgEl('rect', {x:x-35, y:L.headY-30, width:70, height:42, rx:5,
+      fill:'transparent', class:'chit'}));
+    // two-word labels wrap so headers don't collide at the narrower gap — except
+    // under a group banner (Cost), where the banner needs the top line clear.
+    // Texts live INSIDE the group, after the hit rect, so the hover band paints
+    // behind the label instead of covering it.
+    const words = d.label.split(' ');
+    if (words.length > 1 && !d.group) {
+      g.appendChild(svgEl('text', {x, y: L.headY - 26, 'text-anchor':'middle',
+        'font-size':12.5, 'font-weight':600, class: active ? 't-acc' : 't-pri'}, words[0]));
+      g.appendChild(svgEl('text', {x, y: L.headY - 13, 'text-anchor':'middle',
+        'font-size':12.5, 'font-weight':600, class: active ? 't-acc' : 't-pri'}, words.slice(1).join(' ')));
+    } else {
+      g.appendChild(svgEl('text', {x, y: L.headY - 16, 'text-anchor':'middle',
+        'font-size':12.5, 'font-weight':600, class: active ? 't-acc' : 't-pri'}, d.label));
+    }
+    g.appendChild(svgEl('text', {x, y: L.headY, 'text-anchor':'middle',
+      'font-size':10, class: active ? 't-acc' : 't-mut'},
+      activeLvl ? (d.money ? '\u2193 most affordable' : '\u2193 by feasibility')
+        : activeConf ? '\u2193 by confidence' : d.sub));
+    // click cycles: level -> confidence -> back to the default grouping
+    g._sort = activeLvl ? 'col:' + d.key + ':conf'
+            : activeConf ? 'group'
+            : 'col:' + d.key + ':level';
+    svg.appendChild(g);
+  });
+  // COST group banner spanning the two money columns
+  {
+    const gx = L.colStart + 1.5 * L.colGap;    // midpoint of costN / costR
+    svg.appendChild(svgEl('text', {x:gx, y:16, 'text-anchor':'middle', 'font-size':11,
+      'font-weight':600, 'letter-spacing':'.05em', class:'t-pri'}, 'COST'));
+    svg.appendChild(svgEl('line', {x1:gx-70, y1:22, x2:gx+70, y2:22,
+      stroke:'var(--baseline)', 'stroke-width':1}));
+  }
+  if (grouped) {
+    svg.appendChild(svgEl('text', {x:L.srcX, y:L.headY, 'font-size':11,
+      class:'t-mut', 'letter-spacing':'.05em'}, 'MILESTONE'));
+    svg.appendChild(svgEl('text', {x:L.factorX, y:L.headY, 'font-size':11,
+      class:'t-mut', 'letter-spacing':'.05em'}, 'RISK FACTOR'));
+    svg.appendChild(svgEl('text', {x:L.measureX, y:L.headY, 'font-size':11,
+      class:'t-mut', 'letter-spacing':'.05em'}, 'MITIGATION MEASURE'));
+    svg.appendChild(svgEl('text', {x:L.commentX, y:L.headY, 'font-size':11,
+      class:'t-mut', 'letter-spacing':'.05em'}, 'COMMENTS'));
+  } else {
+    svg.appendChild(svgEl('text', {x:L.srcX, y:L.headY, 'font-size':11,
+      class:'t-mut', 'letter-spacing':'.05em'},
+      'MITIGATION MEASURE \u2014 ranked by ' + (() => {
+        const p = SORT.split(':');
+        const dim = DIMS.find(d => d.key === p[1]) || {label:''};
+        return dim.label.toLowerCase() + (p[2] === 'conf' ? ' \u2014 confidence' : '');
+      })()));
+    svg.appendChild(svgEl('text', {x:L.commentX, y:L.headY, 'font-size':11,
+      class:'t-mut', 'letter-spacing':'.05em'}, 'COMMENTS'));
+  }
+  svg.appendChild(svgEl('line', {x1:L.srcX, y1:L.headY + 10, x2:1172, y2:L.headY + 10,
+    stroke:'var(--baseline)', 'stroke-width':1}));
+
+  // ---- group boundaries (default order only)
+  if (grouped) {
+    rows.forEach((r, i) => {
+      if (i > 0 && r.src !== rows[i-1].src) {
+        const y = L.top + i * L.rowH - L.rowH/2 + 2;
+        svg.appendChild(svgEl('line', {x1:L.srcX, y1:y, x2:1172, y2:y,
+          stroke:'var(--grid)', 'stroke-width':1}));
+      }
+    });
+  }
+
+  // ---- rows
+  rows.forEach((r, i) => {
+    const cy = L.top + i * L.rowH;
+
+    if (grouped) {
+      // risk source label, once per group, vertically centered on the group
+      if (i === 0 || r.src !== rows[i-1].src) {
+        // Top-aligned to the group's first row, not centered on the group — easier to
+        // scan, and it reads as a heading for the rows below it.
+        r.src.split(' ').forEach((w, k) => {
+          svg.appendChild(svgEl('text', {x:L.srcX, y: cy + 4 + k*15,
+            'font-size':13, 'font-weight':600, class:'t-pri'}, w));
+        });
+      }
+      // risk factor label, once per factor
+      if (i === 0 || r.factor !== rows[i-1].factor) {
+        wrapText(svg, r.factor, L.factorX, cy, 110, 12, 't-sec', 1);
+      }
+    }
+
+    // measure label. When sorted, the pathway and factor are no longer group
+    // headers, so repeat them as a small prefix line on every row.
+    const mx = grouped ? L.measureX : L.srcX;
+    const prefix = grouped ? '' : r.src.replace(' intrusion','').replace(' heat','').replace(' contact','')
+                                    + ' \u00b7 ' + r.factor;
+    const hasNote = !!r.note;
+    if (!grouped) {
+      svg.appendChild(svgEl('text', {x:mx, y: cy - 8, 'font-size':10.5,
+        class:'t-mut', 'letter-spacing':'.03em'}, prefix.toUpperCase()));
+      svg.appendChild(svgEl('text', {x:mx, y: cy + 8, 'font-size':12.5,
+        'font-weight':600, class:'t-pri'}, r.measure));
+      // rank number
+      svg.appendChild(svgEl('text', {x:mx - 26, y: cy + 4, 'font-size':11.5,
+        class:'t-mut', 'text-anchor':'end'}, String(i + 1)));
+    } else {
+      svg.appendChild(svgEl('text', {x:mx, y: cy + (hasNote ? -3 : 4),
+        'font-size':12.5, 'font-weight':600, class:'t-pri'}, r.measure));
+      if (hasNote) {
+        const t = svgEl('text', {x:mx, y: cy + 13, 'font-size':11, class:'t-mut'});
+        t.innerHTML = r.note;
+        svg.appendChild(t);
+      }
+    }
+
+    // ---- cells
+    DIMS.forEach((d, j) => {
+      const c = r.cells[d.key];
+      const lvl = cellLevel(d, c), conf = c[1], basis = c[2];
+      const lvlLabel = d.money ? TIER_LABEL[lvl] : LEVEL_LABEL[lvl];
+      const dollar = d.money ? (c[3] || fmtUSD(c[0])) : '';
+      const x = L.colStart + j * L.colGap;
+      const g = svgEl('g', {class:'cell', tabindex:'0', role:'img'});
+      g.setAttribute('aria-label',
+        `${r.measure}, ${d.label}: ${lvlLabel}` +
+        (dollar ? `, ${dollar}` : '') +
+        (lvl ? `, confidence ${CONF_LABEL[conf]}` : ''));
+      g.appendChild(svgEl('rect', {class:'hit', x:x-34, y:cy-20, width:68, height:40,
+        rx:5, fill:'transparent'}));
+      if (lvl === 0) {
+        g.appendChild(svgEl('line', {x1:x-6, y1:cy+6, x2:x+6, y2:cy-6,
+          stroke:'var(--baseline)', 'stroke-width':2, 'stroke-linecap':'round'}));
+      } else if (lvl === 4) {
+        // money-only tier: free, labor-only, or under $100 — words, not a dot.
+        // Neutral gray on purpose: confidence shades are illegible at this size,
+        // so confidence for these cells lives in the tooltip and table instead.
+        g.appendChild(svgEl('text', {x, y:cy+4, 'text-anchor':'middle', 'font-size':10.5,
+          'font-style':'italic', class:'t-sec'}, 'minimal cost'));
+      } else {
+        g.appendChild(svgEl('circle', {cx:x, cy, r:R[lvl], fill:CONF[conf],
+          stroke:'var(--surface-1)', 'stroke-width':2}));
+      }
+      // No figures printed under the marks \u2014 dollar amounts and study numbers
+      // live in the tooltip, the comments, and the table view.
+      g._tip = {t:`${r.measure} \u2014 ${d.label}`,
+                l:lvlLabel + (dollar ? ` \u00b7 ${dollar}` : '') +
+                  (lvl ? ` \u00b7 ${CONF_LABEL[conf]} confidence` : ''),
+                b:basis};
+      svg.appendChild(g);
+    });
+
+    // ---- comments: plain wrapped text, no interaction
+    if (r.comment) wrapText(svg, r.comment, L.commentX, cy, L.commentW, 10.5, 't-sec');
+  });
+
+  // ---- footnote, rebuilt with the chart so it always matches the data
+  document.getElementById('chartNote').innerHTML =
+    '<strong>How to read the milestone groups.</strong> Measures are arranged to follow the IBHS 10&ndash;20 ft High Exposure stair-step. Milestones 1&ndash;3 progressively address ember ignition, connective spread, and direct structure exposure; Milestone 4 includes remaining enhanced and shared neighborhood/system actions. ' +
+    '<br><br><strong>Cost is the main barrier, and it can now be priced.</strong> ' +
+    'Half of homeowners name expense as the top reason not to act, rising to 65% among those under ' +
+    '40, and 38% of those still interested could not afford a $15,000 package even with a subsidized ' +
+    'loan and a 15% premium cut. Against that, the median homeowner will spend $3,000 out of pocket ' +
+    'and borrow $5,000. ' +
+    'In the cost columns, vents ($53&ndash;421) and Zone 0 rock (about $2,780) sit inside that budget, ' +
+    'while a $9,670 fence and a whole-house roof or window job sit far outside it. The new-build ' +
+    'column is mostly <em>minimal cost</em>: hardening at rebuild time is inexpensive &mdash; building ' +
+    'to the IBHS base standard costs about $4,200 less in materials than building to the new code. ' +
+    '<br><br><strong>Insurance motivates action, but the premium arithmetic does not close.</strong> ' +
+    'California requires insurers who rate on wildfire risk to credit each measure, yet across 96 ' +
+    'filings a Class A roof earns 1.88% &mdash; about $31 a year against roughly $360 a year in ' +
+    'amortized cost. A full retrofit returns $216 against $2,300. Three insurers covering 500,000+ ' +
+    'policies stopped rating on wildfire risk and so owe nothing at all. The honest case is not ' +
+    'payback but access: a CDI/NAIC study on the Eaton and Palisades footprint found ' +
+    'community-wide hardening cuts average annual loss 31&ndash;35% for 2&ndash;3% added ' +
+    'construction cost. ' +
+    '<br><br><strong>Two measures still need neighbors.</strong> ' +
+    'Structure separation and parallel combustible fences cannot be completed by one owner alone ' +
+    '&mdash; the comments mark both. Homeowners are unwilling to raise this themselves: just 16% would ' +
+    'definitely talk to a neighbor even when offered a 20% group discount. That gap is the ' +
+    'argument for a convened structure rather than a mandate. ' +
+    '<br><br><strong>Livability records the everyday trade-off.</strong> ' +
+    'Fire arrives once in a decade or two, while the shade removed by a Zone 0 clearing cools the ' +
+    'house daily in summer. The Livability column keeps that everyday cost visible next to the fire ' +
+    'benefit, and the Maintenance column separates one-time installs from measures that require ' +
+    'ongoing effort. ' +
+    '<br><br><strong>The Zone 0 evidence changed in late 2025.</strong> ' +
+    'UC Berkeley burn experiments from Gollner&rsquo;s lab showed well-watered shrubs still ignite under ' +
+    'ember and flame exposure &mdash; &ldquo;just because a plant is very moist doesn&rsquo;t mean ' +
+    'it&rsquo;s non-flammable.&rdquo; So well-watered plants do ignite. But the draft rule now before ' +
+    'the Board (next regular meeting 18&ndash;19 Aug 2026) still permits ' +
+    'low non-woody planting and potted plants at 1 ft from the wall. The regulation and the ' +
+    'experiments differ because a rule is a negotiated outcome; this chart does not cite ' +
+    'regulations as evidence of effectiveness. ' +
+    '<br><br><strong>What the evidence does and does not support.</strong> ' +
+    'Structure separation is the best-evidenced measure in the chart and the least achievable here: ' +
+    'top predictor in 4 of the 5 fires studied individually, with survival probability moving from 0.058 to 0.354 ' +
+    'across an 18 m threshold &mdash; while typical Palisades separation is 8 to 20 ft. The evidence ' +
+    'for enclosed eaves is stronger than IBHS guidance suggests. Defensible-space <em>distance</em>, by contrast, had ' +
+    'no measurable effect in Southern California. Where a cell carries a dash, we do not know or it does ' +
+    'not apply — dashes sort to the bottom rather than being scored, so missing evidence is never ' +
+    'mistaken for infeasibility. Where uncertainty remains, the comments state its direction: for ' +
+    'Class A roofs, IBHS argues the standard should go further, not that the measure is ineffective. ' +
+    '<br><br><strong>How confidence was assigned.</strong> ' +
+    'Effectiveness follows an evidence ladder: high means converging published evidence ' +
+    '&mdash; experiments, large post-fire datasets, or test standards agreeing; medium means the ' +
+    'evidence is limited or indirect, or the mechanism is self-evident but untested; low means a ' +
+    'guidance document asserts it, or the evidence conflicts. The cost columns follow source ' +
+    'precision: high is a published fully-loaded price; medium is published but materials-only or ' +
+    'bundled by assembly, so mapping it to a measure took judgment &mdash; the new-build column ' +
+    'rarely rises above medium for exactly that reason; low is our own estimate. Livability and ' +
+    'Maintenance have no literature: their ratings are structured author judgment &mdash; high where ' +
+    'the answer is self-evident, medium where the magnitude is a judgment &mdash; and they are the ' +
+    'two columns where expert review is most needed. ' +
+    '<br><br><strong>Sources.</strong> ' +
+    'IBHS <em>Wildfire Prepared Home</em> Technical Standard (Dec 2025), <em>Home Mitigations That ' +
+    'Matter</em> (2023), <em>Vegetation in Zone 0</em> (2025) and <em>The 2025 LA Conflagrations</em> ' +
+    '(Dec 2025, 252 properties + 30,000 DINS records); ' +
+    'CAL FIRE Board of Forestry Zone 0 draft rule and workshop record (2022&ndash;26), incl. UC Berkeley ' +
+    '(Gollner lab) burn experiments (2025); Zamanialaei et al., <em>Nature Communications</em> 16:8041 (2025); ' +
+    'Norlen et al., <em>Nature Communications</em> 17 (2026); Syphard &amp; Keeley, <em>Fire</em> 2:49 ' +
+    '(2019); Syphard, Brennan &amp; Keeley, <em>Int. J. Wildland Fire</em> 23:1165 (2014); Knapp et al., ' +
+    '<em>Fire Ecology</em> 17:25 (2021); Baylis &amp; Boomhower, NBER WP 29621 (published <em>J. Political Economy</em> 2026); Esparza et al., ' +
+    'arXiv:2512.20813 (2025, preprint); Mockrin et al., <em>J. Environ. Manage.</em> 347:118960 (2023); ' +
+    'Headwaters Economics <em>Retrofitting a Home for Wildfire Resistance</em> (2024, fully loaded) and ' +
+    'Headwaters / IBHS construction costs (Fall 2025, materials only); RFF WP 25-30 on insurer filings ' +
+    '(Dec 2025); Hart Research / Megafire Action homeowner survey (Mar 2026, n=700 incl. 90272); ' +
+    'USGBC-CA &times; Arup <em>California Wildfire Rebuilding Guide</em> V1 (Apr 2025); Theodore Payne Foundation. ' +
+    'Full paper notes in <em>Literature_Quantified_Findings.md</em>.';
+  wireTips();
+}
+
+// crude but adequate label wrapper for the narrow factor column
+function wrapText(svg, str, x, cy, maxW, size, cls, span) {
+  const words = str.split(' ');
+  const lines = [];
+  let cur = '';
+  const per = maxW / (size * 0.52);
+  words.forEach(w => {
+    if ((cur + ' ' + w).trim().length > per) { if (cur) lines.push(cur); cur = w; }
+    else cur = (cur + ' ' + w).trim();
+  });
+  if (cur) lines.push(cur);
+  const y0 = cy - (lines.length - 1) * (size + 2) / 2 + 4;
+  lines.forEach((ln, k) => {
+    svg.appendChild(svgEl('text', {x, y: y0 + k * (size + 2), 'font-size':size, class:cls}, ln));
+  });
+}
+
+function buildTable() {
+  const b = document.getElementById('tvBody');
+  while (b.firstChild) b.removeChild(b.firstChild);
+  ROWS.forEach(r => {
+    DIMS.forEach((d, j) => {
+      const c = r.cells[d.key];
+      const lvl = cellLevel(d, c), conf = c[1], basis = c[2];
+      const lvlText = d.money
+        ? (TIER_LABEL[lvl] + ((lvl && lvl !== 4) ? ' \u2014 ' + (c[3] || fmtUSD(c[0])) : ''))
+        : LEVEL_LABEL[lvl];
+      const tr = document.createElement('tr');
+      const cells = [
+        j === 0 ? r.src : '', j === 0 ? r.factor : '', j === 0 ? r.measure : '',
+        d.label, lvlText, lvl ? CONF_LABEL[conf] : '\u2014',
+        sourcesOf(basis), basis, j === 0 ? (r.comment || '') : ''
+      ];
+      cells.forEach((cv, k) => {
+        const td = document.createElement('td');
+        if (k === 5 || k === 6) td.className = 'n';
+        td.textContent = cv;
+        tr.appendChild(td);
+      });
+      b.appendChild(tr);
+    });
+  });
+}
+
+const _tip = document.getElementById('tip');
+function hideTip() { _tip.style.opacity = '0'; }
+function showTip(el, x, y) {
+  const d = el._tip;
+  _tip.innerHTML = `<b>${d.t}</b><span class="lv">${d.l}</span>${d.b}`;
+  _tip.style.opacity = '1';
+  const r = _tip.getBoundingClientRect();
+  const left = Math.min(x + 14, window.innerWidth - r.width - 12);
+  const top = (y + 16 + r.height > window.innerHeight) ? y - r.height - 12 : y + 16;
+  _tip.style.left = Math.max(8, left) + 'px';
+  _tip.style.top = Math.max(8, top) + 'px';
+}
+function wireTips() {
+  document.querySelectorAll('#chart .colhead').forEach(el => {
+    const go = () => {
+      SORT = el._sort;                       // already the next state in the cycle
+      document.querySelectorAll('[data-sort]').forEach(b =>
+        b.setAttribute('aria-pressed', String(b.getAttribute('data-sort') === SORT)));
+      build();
+    };
+    el.addEventListener('click', go);
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+    });
+  });
+  document.querySelectorAll('#chart .cell').forEach(el => {
+    el.addEventListener('mousemove', e => showTip(el, e.clientX, e.clientY));
+    el.addEventListener('mouseleave', hideTip);
+    el.addEventListener('focus', () => {
+      const r = el.getBoundingClientRect();
+      showTip(el, r.left + r.width / 2, r.top + r.height / 2);
+    });
+    el.addEventListener('blur', hideTip);
+  });
+}
+
+build();
+buildTable();
+
+// ---- controls
+(function () {
+  const xb = document.getElementById('tableBtn'), tv = document.getElementById('tableView');
+  xb.addEventListener('click', () => {
+    const open = tv.hasAttribute('hidden');
+    if (open) tv.removeAttribute('hidden'); else tv.setAttribute('hidden', '');
+    xb.setAttribute('aria-pressed', String(open));
+    xb.textContent = open ? 'Hide table view' : 'Show table view';
+  });
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') hideTip(); });
+
+  // sort buttons
+  document.querySelectorAll('[data-sort]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      SORT = btn.getAttribute('data-sort');
+      document.querySelectorAll('[data-sort]').forEach(b =>
+        b.setAttribute('aria-pressed', String(b === btn)));
+      build();
+    });
+  });
+})();
+</script>
+</body>
+</html>
