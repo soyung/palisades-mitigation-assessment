@@ -3,7 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Palisades wildfire mitigation — feasibility assessment</title>
+<title>Wildfire mitigation milestones — 10–20 ft High Exposure pathway</title>
+<meta name="description" content="29 wildfire mitigation measures for Pacific Palisades, scored on effectiveness, cost, livability, and maintenance — with the evidence one hover away.">
+<meta property="og:title" content="Wildfire mitigation milestones — 10–20 ft High Exposure pathway">
+<meta property="og:description" content="29 wildfire mitigation measures for Pacific Palisades, scored on effectiveness, cost, livability, and maintenance — with the evidence one hover away.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://palisades-mitigation-assessment.vercel.app/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%94%A5%3C/text%3E%3C/svg%3E">
 <style>
   :root, .viz-root {
     color-scheme: light;
@@ -78,8 +84,10 @@
   table.sizeTable td { padding: 7px 10px; border-bottom: 1px solid var(--grid);
                         color: var(--text-secondary); vertical-align: middle; }
   table.sizeTable tbody tr:nth-child(odd) { background: var(--band); }
-  table.sizeTable td.szcell { width: 50px; padding-right: 22px; border-right: 1px solid var(--grid); }
-  table.sizeTable td.lvlcell { padding-left: 22px; }
+  table.sizeTable td.szcell { width: 44px; text-align: center; }
+  .szdot { display: inline-block; border-radius: 50%; background: var(--text-primary);
+           vertical-align: middle; }
+  table.sizeTable td.lvlcell { padding-left: 10px; }
 
   .naRow { display: flex; align-items: center; gap: 8px; font-size: 12.5px;
            color: var(--text-secondary); margin: 2px 0 18px; }
@@ -108,7 +116,12 @@
   .cell:focus { outline: none; }
   .cell:focus-visible rect.hit, .cell:hover rect.hit { fill: var(--band); }
 
+  .tvScroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   table.tv { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  @media (max-width: 899px) {
+    table.tv { min-width: 900px; }   /* keep the layout legible; the wrapper pans */
+    .tvScroll { margin: 0 -16px; padding: 0 16px; }  /* let the pan area breathe to the card edge */
+  }
   table.tv th, table.tv td { text-align: left; padding: 9px 12px 9px 0;
                              border-bottom: 1px solid var(--grid); vertical-align: top; }
   table.tv th { color: var(--text-secondary); font-weight: 600; font-size: 11px;
@@ -116,11 +129,68 @@
   table.tv td.n { white-space: nowrap; }
   #tableView[hidden] { display: none; }
 
+  /* --- mobile card view --- */
+  #cardView { display: none; }
+  .cv-tier { margin: 20px 0 8px; padding-top: 12px; border-top: 2px solid var(--baseline); }
+  .cv-tier:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+  .cv-tier span { display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: .07em;
+                  text-transform: uppercase; padding: 4px 12px; border-radius: 999px; }
+  .cv-tier.tE span { background: var(--text-primary); color: #fff; border: 1px solid var(--text-primary); }
+  .cv-tier.tX span { background: var(--surface-1); color: var(--text-primary); border: 1.5px solid var(--text-secondary); }
+  .cv-tagline { font-size: 11.5px; font-style: italic; color: var(--text-muted); padding: 0 4px 8px; }
+  .cv-groupbox { margin-bottom: 8px; }
+  .cv-groupbox > summary { list-style: none; cursor: pointer; }
+  .cv-groupbox > summary::-webkit-details-marker { display: none; }
+  .cv-group { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 8px;
+              background: var(--page); padding: 12px 4px 11px;
+              font-size: 12.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+              color: var(--text-primary); border-bottom: 1px solid var(--grid); }
+  .cv-count { margin-left: auto; font-weight: 400; font-size: 12px; letter-spacing: 0;
+              text-transform: none; color: var(--text-muted); }
+  .cv-group::after { content: '\25B8'; color: var(--text-muted); transition: transform .15s; }
+  .cv-groupbox[open] .cv-group::after { transform: rotate(90deg); }
+  .cv-groupbox[open] > summary { margin-bottom: 10px; }
+  .cv-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+             padding: 14px 16px 12px; margin-bottom: 10px; }
+  .cv-measure { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .cv-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+  .cv-dim { display: flex; align-items: center; gap: 10px; padding: 3px 0; font-size: 13px; }
+  .cv-dim svg { flex: none; }
+  .cv-dimlabel { width: 92px; flex: none; color: var(--text-secondary); }
+  .cv-lvl { color: var(--text-primary); }
+  .cv-min { font-style: italic; }
+  .cv-comment { font-size: 13px; color: var(--text-secondary); line-height: 1.45;
+                margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--grid); }
+  .cv-card details { margin-top: 8px; }
+  .cv-card summary { font-size: 12.5px; color: var(--accent); cursor: pointer; }
+  .cv-card details p { font-size: 12.5px; line-height: 1.5; color: var(--text-secondary); margin: 8px 0 0; }
+  .cv-card details b { color: var(--text-primary); }
+  @media print {
+    .toolbar, .toggleInfo, .tip, #cardView { display: none !important; }
+    .viz-root { padding: 0; }
+    body, .viz-root { background: #fff; }
+    .card { border: none; padding: 10px 0; margin-bottom: 6px; }
+    #chart { display: block !important; }
+    #chartNote { column-count: 2; }
+  }
+  @media (max-width: 899px) {
+    .viz-root { padding: 22px 14px 40px; }
+    h1 { font-size: 22px; }
+    #chart { display: none; }
+    #cardView { display: block; }
+    .sortlab, button[data-sort], .tbsep { display: none; }
+    .toggleInfo { display: none; }
+    table.sizeTable { font-size: 11.5px; }
+    table.sizeTable th, table.sizeTable td { padding: 6px 6px; }
+  }
+
   .tip { position: fixed; pointer-events: none; z-index: 50; background: var(--surface-1);
          color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px;
          padding: 10px 12px; font-size: 12.5px; line-height: 1.5; max-width: 330px;
          box-shadow: 0 4px 16px rgba(0,0,0,.14); opacity: 0; transition: opacity .1s; }
   .tip b { font-weight: 600; }
+  .tip .tipsrc { display: block; margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--grid);
+                 color: var(--text-muted); font-size: 11px; }
   .tip .lv { color: var(--text-secondary); display: block; margin: 3px 0 5px; }
 </style>
 </head>
@@ -128,9 +198,9 @@
 <div class="viz-root"><div class="wrap">
 
 <p class="eyebrow">Palisades Recovery Coalition &middot; Community Recovery Labs &middot; discussion draft</p>
-<h1>Wildfire mitigation milestones &mdash; 10&ndash;20 ft High Exposure pathway</h1>
+<h1>Wildfire mitigation milestones &mdash; <span style="white-space:nowrap">10&ndash;20&nbsp;ft</span> High Exposure pathway</h1>
 <div class="intro">
-<p class="lede"><strong>Organized to match the IBHS 10&ndash;20 ft High Exposure pathway:</strong> Ember Defense &rarr; Spread Defense &rarr; Structure Defense &rarr; Neighborhood Resilience. The milestone is the outcome; the pathway determines the task sequence.</p>
+<p class="lede"><strong>Organized to match the IBHS 10&ndash;20 ft High Exposure pathway:</strong> Ember Defense &rarr; Spread Defense &rarr; Structure Defense &rarr; Neighborhood Resilience. The milestone is the outcome; the pathway determines the task sequence. <strong>Milestones 1 and 2 are Essential; milestones 3 and 4 are Enhanced</strong> &mdash; protection to add once the essentials are in place.</p>
 <p class="lede"><strong>Circle size</strong> is how well a measure performs for each of the four
 attributes: effectiveness at reducing fire risk, cost, effects on livability or quality of life,
 and maintenance needs. <strong>Circle color</strong> is how confident we are in that score, kept separate
@@ -152,15 +222,15 @@ on purpose: a measure can look good on a dimension where our basis for saying so
         <thead><tr><th></th><th>Effectiveness</th><th>Cost</th><th>Livability</th><th>Maintenance</th></tr></thead>
         <tbody>
           <tr>
-            <td class="szcell"><svg width="24" height="22"><circle cx="12" cy="11" r="9.5" fill="#000"/></svg></td>
+            <td class="szcell"><span class="szdot" style="width:19px;height:19px"></span></td>
             <td class="lvlcell">High</td><td>&lt;$3,000</td><td>No impact</td><td>Low needs</td>
           </tr>
           <tr>
-            <td class="szcell"><svg width="24" height="22"><circle cx="12" cy="11" r="5.8" fill="#000"/></svg></td>
+            <td class="szcell"><span class="szdot" style="width:12px;height:12px"></span></td>
             <td class="lvlcell">Medium</td><td>$3,000 to $8,000</td><td>Some impact</td><td>Medium needs</td>
           </tr>
           <tr>
-            <td class="szcell"><svg width="24" height="22"><circle cx="12" cy="11" r="2.6" fill="#000"/></svg></td>
+            <td class="szcell"><span class="szdot" style="width:6px;height:6px"></span></td>
             <td class="lvlcell">Low</td><td>&gt;$8,000</td><td>High impact</td><td>High needs</td>
           </tr>
         </tbody>
@@ -182,17 +252,28 @@ on purpose: a measure can look good on a dimension where our basis for saying so
         <div class="lrow"><span class="lsw" style="background:var(--conf-med)"></span> Medium &mdash; evidence exists but is limited or indirect</div>
         <div class="lrow"><span class="lsw" style="background:var(--conf-low)"></span> Low &mdash; asserted in guidance, little or no evidence published</div>
       </div>
+      <h3 style="margin-top:18px">How to read one circle</h3>
+      <svg viewBox="0 0 320 104" style="max-width:320px" role="img" aria-label="A sample circle: size is the score, color is confidence, hover for the evidence">
+        <circle cx="36" cy="52" r="20" fill="var(--conf-high)"/>
+        <line x1="58" y1="34" x2="92" y2="20" stroke="var(--baseline)" stroke-width="1"/>
+        <text x="98" y="24" font-size="12.5" fill="var(--text-secondary)">bigger = better score</text>
+        <line x1="60" y1="52" x2="92" y2="52" stroke="var(--baseline)" stroke-width="1"/>
+        <text x="98" y="56" font-size="12.5" fill="var(--text-secondary)">darker = more confident</text>
+        <line x1="58" y1="70" x2="92" y2="84" stroke="var(--baseline)" stroke-width="1"/>
+        <text x="98" y="88" font-size="12.5" fill="var(--text-secondary)">hover = the evidence and dollars</text>
+      </svg>
     </div>
   </div>
   <div class="toggleInfo">
     <h3>How to toggle this chart</h3>
-    <p>Click a column heading &mdash; once to rank by it, twice for confidence, a third click restores pathway order.</p>
+    <p>Click a column heading &mdash; once to rank by it, twice for confidence, a third click restores milestone order.</p>
     <p>Hover over any circle to get more information.</p>
   </div>
 </section>
 
 <section class="card">
   <p id="chartDesc" class="sr-only">Matrix of 29 wildfire mitigation measures grouped under four IBHS milestones for the 10–20 ft High Exposure pathway, assessed on five dimensions — effectiveness, new-build cost, retrofit cost, livability, and maintenance — with a short comment per measure. Circle size shows the level (for cost, the affordability tier) and circle color shows confidence in that assessment.</p>
+  <div id="cardView" aria-label="Wildfire mitigation measures, card list"></div>
   <svg id="chart" viewBox="0 0 1180 700" role="img"
        aria-label="Wildfire mitigation feasibility matrix" aria-describedby="chartDesc">
   </svg>
@@ -203,12 +284,12 @@ on purpose: a measure can look good on a dimension where our basis for saying so
   <h1 style="font-size:19px;margin-bottom:6px">Table view</h1>
   <p class="lede" style="font-size:14px;margin-bottom:16px">Every cell as text: level, confidence,
   and the reasoning. Nothing here depends on color.</p>
-  <table class="tv"><thead><tr>
-    <th style="width:7%">Risk source</th><th style="width:8%">Risk factor</th>
+  <div class="tvScroll"><table class="tv"><thead><tr>
+    <th style="width:7%">Milestone</th><th style="width:8%">Risk factor</th>
     <th style="width:10%">Measure</th><th style="width:8%">Dimension</th>
     <th style="width:10%">Level</th><th style="width:5%">Conf.</th>
     <th style="width:8%">Sources</th><th>Basis</th><th style="width:14%">Comment</th>
-  </tr></thead><tbody id="tvBody"></tbody></table>
+  </tr></thead><tbody id="tvBody"></tbody></table></div>
 </section>
 
 <div class="tip" id="tip" role="status" aria-live="polite"></div>
@@ -655,7 +736,19 @@ function build() {
   const rows = orderedRows();
   const grouped = SORT === 'group';
   const nRows = rows.length;
-  const plotH = L.top + nRows * L.rowH;
+  // Essential / Enhanced tier bands (grouped order only): milestones 1-2 vs 3-4
+  const TIER_H = 34;
+  const tierOf = r => (r.src.charAt(0) === '1' || r.src.charAt(0) === '2') ? 'E' : 'X';
+  let extraY = 0;
+  const tierBands = [];
+  const rowY = rows.map((r, i) => {
+    if (grouped && (i === 0 || tierOf(r) !== tierOf(rows[i - 1]))) {
+      extraY += TIER_H;
+      tierBands.push({c: L.top + i * L.rowH + extraY, tier: tierOf(r), i});
+    }
+    return L.top + i * L.rowH + extraY;
+  });
+  const plotH = L.top + nRows * L.rowH + extraY;
   svg.setAttribute('viewBox', `0 0 1180 ${plotH + 26}`);
 
   // ---- column headers
@@ -722,30 +815,57 @@ function build() {
   }
   svg.appendChild(svgEl('line', {x1:L.srcX, y1:L.headY + 10, x2:1172, y2:L.headY + 10,
     stroke:'var(--baseline)', 'stroke-width':1}));
+  // sort affordance, always visible
+  svg.appendChild(svgEl('text', {x:1172, y:16, 'text-anchor':'end', 'font-size':10.5,
+    class:'t-mut'}, 'click a column heading to rank by it \u21c5'));
 
   // ---- group boundaries (default order only)
   if (grouped) {
     rows.forEach((r, i) => {
-      if (i > 0 && r.src !== rows[i-1].src) {
-        const y = L.top + i * L.rowH - L.rowH/2 + 2;
+      if (i > 0 && r.src !== rows[i-1].src && tierOf(r) === tierOf(rows[i-1])) {
+        const y = rowY[i] - L.rowH/2 + 2;
         svg.appendChild(svgEl('line', {x1:L.srcX, y1:y, x2:1172, y2:y,
           stroke:'var(--grid)', 'stroke-width':1}));
       }
+    });
+    // Essential / Enhanced break: a labeled rule where each tier begins
+    tierBands.forEach(b => {
+      const lineY = b.c - L.rowH/2 - TIER_H + 8;
+      if (b.i > 0) svg.appendChild(svgEl('line', {x1:L.srcX, y1:lineY, x2:1172, y2:lineY,
+        stroke:'var(--baseline)', 'stroke-width':1.5}));
+      const label = b.tier === 'E' ? 'ESSENTIAL \u00b7 MILESTONES 1\u20132' : 'ENHANCED \u00b7 MILESTONES 3\u20134';
+      const pw = label.length * 8 + 30;
+      const pill = svgEl('rect', {x:L.srcX, y:lineY + 4, width:pw, height:21, rx:10.5,
+        fill: b.tier === 'E' ? 'var(--text-primary)' : 'var(--surface-1)',
+        stroke: b.tier === 'E' ? 'var(--text-primary)' : 'var(--text-secondary)',
+        'stroke-width':1.2});
+      svg.appendChild(pill);
+      svg.appendChild(svgEl('text', {x:L.srcX + pw / 2, y:lineY + 19, 'font-size':11,
+        'font-weight':700, 'letter-spacing':'.07em', 'text-anchor':'middle',
+        fill: b.tier === 'E' ? '#ffffff' : 'var(--text-primary)'}, label));
     });
   }
 
   // ---- rows
   rows.forEach((r, i) => {
-    const cy = L.top + i * L.rowH;
+    const cy = rowY[i];
 
     if (grouped) {
       // risk source label, once per group, vertically centered on the group
       if (i === 0 || r.src !== rows[i-1].src) {
         // Top-aligned to the group's first row, not centered on the group — easier to
         // scan, and it reads as a heading for the rows below it.
-        r.src.split(' ').forEach((w, k) => {
+        const srcWords = r.src.split(' ');
+        srcWords.forEach((w, k) => {
           svg.appendChild(svgEl('text', {x:L.srcX, y: cy + 4 + k*15,
             'font-size':13, 'font-weight':600, class:'t-pri'}, w));
+        });
+        // one-line meaning under the milestone name
+        const TAGLINES = {'1':['deny the first','ignition'], '2':['break the','fuel path'],
+                          '3':['survive the','exposure'], '4':['stop the','chain reaction']};
+        (TAGLINES[r.src.charAt(0)] || []).forEach((w, k) => {
+          svg.appendChild(svgEl('text', {x:L.srcX, y: cy + 10 + srcWords.length*15 + k*13,
+            'font-size':10.5, 'font-style':'italic', class:'t-mut'}, w));
         });
       }
       // risk factor label, once per factor
@@ -807,10 +927,11 @@ function build() {
       }
       // No figures printed under the marks \u2014 dollar amounts and study numbers
       // live in the tooltip, the comments, and the table view.
+      const srcTags = sourcesOf(basis);
       g._tip = {t:`${r.measure} \u2014 ${d.label}`,
                 l:lvlLabel + (dollar ? ` \u00b7 ${dollar}` : '') +
                   (lvl ? ` \u00b7 ${CONF_LABEL[conf]} confidence` : ''),
-                b:basis};
+                b:basis, s:(srcTags !== '\u2014' ? srcTags : '')};
       svg.appendChild(g);
     });
 
@@ -820,7 +941,7 @@ function build() {
 
   // ---- footnote, rebuilt with the chart so it always matches the data
   document.getElementById('chartNote').innerHTML =
-    '<strong>How to read the milestone groups.</strong> Measures are arranged to follow the IBHS 10&ndash;20 ft High Exposure stair-step. Milestones 1&ndash;3 progressively address ember ignition, connective spread, and direct structure exposure; Milestone 4 includes remaining enhanced and shared neighborhood/system actions. ' +
+    '<strong>How to read the milestone groups.</strong> Measures are arranged to follow the IBHS 10&ndash;20 ft High Exposure stair-step. Milestones 1&ndash;3 progressively address ember ignition, connective spread, and direct structure exposure; Milestone 4 includes remaining enhanced and shared neighborhood/system actions. Milestones 1&ndash;2 form the Essential tier; milestones 3&ndash;4 are Enhanced. ' +
     '<br><br><strong>Cost is the main barrier, and it can now be priced.</strong> ' +
     'Half of homeowners name expense as the top reason not to act, rising to 65% among those under ' +
     '40, and 38% of those still interested could not afford a $15,000 package even with a subsidized ' +
@@ -941,7 +1062,8 @@ const _tip = document.getElementById('tip');
 function hideTip() { _tip.style.opacity = '0'; }
 function showTip(el, x, y) {
   const d = el._tip;
-  _tip.innerHTML = `<b>${d.t}</b><span class="lv">${d.l}</span>${d.b}`;
+  _tip.innerHTML = `<b>${d.t}</b><span class="lv">${d.l}</span>${d.b}` +
+    (d.s ? `<span class="tipsrc">Sources: ${d.s}</span>` : '');
   _tip.style.opacity = '1';
   const r = _tip.getBoundingClientRect();
   const left = Math.min(x + 14, window.innerWidth - r.width - 12);
@@ -973,8 +1095,75 @@ function wireTips() {
   });
 }
 
+// ---- mobile card view: same data, rendered as a readable list under 900px
+function buildCards() {
+  const host = document.getElementById('cardView');
+  if (!host) return;
+  const TIER_SHORT = {4:'Minimal cost', 3:'≤$3,000', 2:'$3,000–8,000', 1:'>$8,000', 0:'—'};
+  // group rows by milestone (contiguous in ROWS order)
+  const groups = [];
+  ROWS.forEach(r => {
+    if (!groups.length || groups[groups.length - 1].src !== r.src) groups.push({src: r.src, rows: []});
+    groups[groups.length - 1].rows.push(r);
+  });
+  const CV_TAGLINES = {'1':'deny the first ignition', '2':'break the fuel path',
+                       '3':'survive the exposure', '4':'stop the chain reaction'};
+  let html = '', lastTier = '';
+  groups.forEach(gr => {
+    const isE = gr.src.charAt(0) === '1' || gr.src.charAt(0) === '2';
+    const tier = isE ? 'Essential · milestones 1–2' : 'Enhanced · milestones 3–4';
+    if (tier !== lastTier) {
+      html += `<div class="cv-tier ${isE ? 'tE' : 'tX'}"><span>${tier}</span></div>`;
+      lastTier = tier;
+    }
+    let cards = '';
+    gr.rows.forEach(r => {
+    let dims = '', det = '';
+    DIMS.forEach(d => {
+      const c = r.cells[d.key];
+      const lvl = cellLevel(d, c), conf = c[1];
+      const dollar = d.money ? (c[3] || fmtUSD(c[0])) : '';
+      let mark;
+      if (lvl === 0) {
+        mark = '<svg width="22" height="20"><line x1="6" y1="14" x2="16" y2="6" stroke="var(--baseline)" stroke-width="2" stroke-linecap="round"/></svg>';
+      } else if (lvl === 4) {
+        mark = '<svg width="22" height="20"></svg>';
+      } else {
+        mark = `<svg width="22" height="20"><circle cx="11" cy="10" r="${R[lvl]}" fill="${CONF[conf]}"/></svg>`;
+      }
+      const lvlTxt = lvl === 0 ? '—'
+        : d.money ? `<span class="${lvl === 4 ? 'cv-min' : ''}">${TIER_SHORT[lvl]}</span>` +
+                    (lvl !== 4 && dollar ? ' · ' + dollar : '')
+        : `${LEVEL_LABEL[lvl]} · ${CONF_LABEL[conf].toLowerCase()} confidence`;
+      dims += `<div class="cv-dim">${mark}<span class="cv-dimlabel">${d.label}</span><span class="cv-lvl">${lvlTxt}</span></div>`;
+      det += `<p><b>${d.label}.</b> ${c[2]}</p>`;
+    });
+    cards += `<div class="cv-card">
+      <div class="cv-measure">${r.measure}</div>
+      <div class="cv-sub">${r.factor}${r.note ? ' · ' + r.note : ''}</div>
+      ${dims}
+      <div class="cv-comment">${r.comment}</div>
+      <details><summary>Why these ratings</summary>${det}</details>
+    </div>`;
+    });
+    // all groups start collapsed: the four milestones land as a one-screen overview
+    html += `<details class="cv-groupbox"><summary><div class="cv-group">${gr.src}` +
+            `<span class="cv-count">${gr.rows.length} measure${gr.rows.length === 1 ? '' : 's'}</span></div><div class="cv-tagline">${CV_TAGLINES[gr.src.charAt(0)] || ''}</div></summary>${cards}</details>`;
+  });
+  host.innerHTML = html;
+  // exclusive accordion: opening one milestone closes the others
+  host.querySelectorAll('details.cv-groupbox').forEach(d => {
+    d.addEventListener('toggle', () => {
+      if (d.open) host.querySelectorAll('details.cv-groupbox[open]').forEach(o => {
+        if (o !== d) o.open = false;
+      });
+    });
+  });
+}
+
 build();
 buildTable();
+buildCards();
 
 // ---- controls
 (function () {
